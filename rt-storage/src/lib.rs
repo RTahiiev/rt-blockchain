@@ -1,10 +1,8 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::fs;
 use std::env;
 use std::path::Path;
 use std::io::{Write, BufReader, BufRead, Error};
-
-env_logger::init!();
 
 const BASIC_STORAGE_DIR_NAME: &str = "/chaindata";
 
@@ -17,7 +15,7 @@ pub fn init_storage() -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn write_data<T: Debug>(name: String, data: T) -> Result<(), Error> {
+pub fn write_data<T: Display>(name: String, data: T) -> Result<(), Error> {
     init_storage(); // TODO: error handle
     let current_dir = &env::current_dir().unwrap();
     let base_dir = Path::new(BASIC_STORAGE_DIR_NAME);
@@ -25,7 +23,7 @@ pub fn write_data<T: Debug>(name: String, data: T) -> Result<(), Error> {
     let chain_data = env::join_paths([current_dir, base_dir, name].iter()).unwrap();
     log::info!("Write in: {:?}", chain_data);
     let mut file = fs::File::create(chain_data)?;
-    write!(file, "{:?}", data)?;
+    write!(file, "{}", data)?;
 
     Ok(())
 }
@@ -65,8 +63,19 @@ pub fn read_data(name: String) -> Result<Vec<String>, Error> {
 mod tests {
     use super::*;
 
+    fn init_logger() {
+        let _ = env_logger::builder()
+            // Include all events in tests
+            .filter_level(log::LevelFilter::max())
+            // Ensure events are captured by `cargo test`
+            .is_test(true)
+            // Ignore errors initializing the logger if tests race to configure it
+            .try_init();
+    }
+
     #[test]
     fn test_write_data() {
+        init_logger();
         let name = "000001";
         let data = "Test data";
         write_data(name.to_owned(), data).unwrap();
@@ -74,6 +83,7 @@ mod tests {
 
     #[test]
     fn test_read_data() {
+        init_logger();
         let name = "000001";
         let data = "Test data";
         let mut result = read_data(name.to_owned()).unwrap();

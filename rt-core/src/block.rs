@@ -42,3 +42,15 @@ impl Block {
         write_data(name, self).unwrap();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_block() {
+        let data = "Some data";
+        let block = Block::new(data.to_owned());
+        block.save();
+    }
+}
